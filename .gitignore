@@ -1,0 +1,13 @@
+-.d
+-.i
+-.p1
+.ca
+.generated_files
+.idea
+Makefile
+Makefile*/**
+build
+dist
+debug
+mcc_generated_files
+nbproject
