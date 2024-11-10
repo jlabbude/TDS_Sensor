@@ -1,0 +1,3 @@
+[submodule "tds_dashboard"]
+	path = tds_dashboard
+	url = https://github.com/jlabbude/tds_dashboard
