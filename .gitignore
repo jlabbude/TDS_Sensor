@@ -11,3 +11,5 @@ dist
 debug
 mcc_generated_files
 nbproject
+/tds_dashboard/dist/
+/tds_dashboard/style.css
