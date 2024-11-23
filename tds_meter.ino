@@ -1,27 +1,27 @@
-#include <ESP8266WiFi.h>
+#include <WiFiEspAT.h>
 #include <PubSubClient.h>
-#include <string>
+#include <SoftwareSerial.h>
 
 #define TdsSensorPin A0
-#define VREF 5.0
+#define VREF 5.0 
 #define SCOUNT 30
 
 const char *ssid = "WIFI_SSID";
 const char *password = "WIFI_PASSWORD";
-
 const char *mqtt_broker = "broker";
 const char *mqtt_topic = "topic";
 const char *mqtt_username = "user";
 const char *mqtt_password = "pass";
 const int mqtt_port = 1883;
+
 WiFiClient espClient;
-PubSubClient mqtt_client(espClient);
+PubSubClient client(espClient);
+SoftwareSerial espSerial(2, 3);  
 
 int analogBuffer[SCOUNT];
 int analogBufferTemp[SCOUNT];
 int analogBufferIndex = 0, copyIndex = 0;
 float averageVoltage = 0, tdsValue = 0, temperature = 25;
-
 
 int getMedianNum(int bArray[], int iFilterLen) {
   int bTab[iFilterLen];
@@ -44,56 +44,46 @@ int getMedianNum(int bArray[], int iFilterLen) {
   return bTemp;
 }
 
-void connectToWiFi() {
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi");
+void connectWiFi() {
+  Serial.print("Connecting to WiFi  ");
+  WiFi.begin(ssid, pass);
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
     Serial.print(".");
+    delay(500);
   }
-  Serial.println("\nConnected to the WiFi network");
+  Serial.println("Connected to WiFi");
 }
 
-void connectToMQTTBroker() {
-  while (!mqtt_client.connected()) {
-    String client_id = "esp8266-client-" + String(WiFi.macAddress());
-    Serial.printf("Connecting to MQTT Broker as %s.....\n", client_id.c_str());
-    if (mqtt_client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
-      Serial.println("Connected to MQTT broker");
-      mqtt_client.subscribe(mqtt_topic);
-      // Publish message upon successful connection
-      mqtt_client.publish(mqtt_topic, "Hi EMQX I'm ESP8266 ^^");
+void connectMQTT() {
+  while (!client.connected()) {
+    Serial.print("Connecting to MQTT...");
+    if (client.connect("ArduinoClient", mqttUsername, mqttPassword)) {
+      Serial.println("Connected to MQTT");
     } else {
-      Serial.print("Failed to connect to MQTT broker, rc=");
-      Serial.print(mqtt_client.state());
-      Serial.println(" try again in 5 seconds");
+      Serial.print("Failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" trying again in 5 seconds");
       delay(5000);
     }
   }
 }
 
-void mqttCallback(char *topic, byte *payload, unsigned int length) {
-  Serial.print("Message received on topic: ");
-  Serial.println(topic);
-  Serial.print("Message:");
-  for (unsigned int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-  }
-  Serial.println();
-  Serial.println("-----------------------");
-}
-
-
 void setup() {
   Serial.begin(115200);
   pinMode(TdsSensorPin, INPUT);
-  connectToWiFi();
-  mqtt_client.setServer(mqtt_broker, mqtt_port);
-  mqtt_client.setCallback(mqttCallback);
-  connectToMQTTBroker();
+  
+  espSerial.begin(9600);
+  WiFi.init(&espSerial);
+  connectWiFi();
+  client.setServer(mqttServer, mqttPort);
 }
 
-float calc_tds() {
+void loop() {
+  if (!client.connected()) {
+    connectMQTT();
+  }
+  client.loop();
+
   static unsigned long analogSampleTimepoint = millis();
   if (millis() - analogSampleTimepoint > 40U) {
     analogSampleTimepoint = millis();
@@ -102,29 +92,30 @@ float calc_tds() {
     if (analogBufferIndex == SCOUNT)
       analogBufferIndex = 0;
   }
-  static unsigned long printTimepoint = millis();
-  if (millis() - printTimepoint > 800U) {
-    printTimepoint = millis();
-    for (copyIndex = 0; copyIndex < SCOUNT; copyIndex++)
-      analogBufferTemp[copyIndex] = analogBuffer[copyIndex];
+
+
+  static unsigned long calculationTimepoint = millis();
+  if (millis() - calculationTimepoint >= 5000U) {
+    calculationTimepoint = millis();
+
+    for (int i = 0; i < SCOUNT; i++) {
+      analogBufferTemp[i] = analogBuffer[i];
+    }
+
     averageVoltage = getMedianNum(analogBufferTemp, SCOUNT) * (float)VREF / 1024.0;
     float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);
-    float compensationVolatge = averageVoltage / compensationCoefficient;
-    tdsValue = (133.42 * compensationVolatge * compensationVolatge * compensationVolatge - 255.86 * compensationVolatge * compensationVolatge + 857.39 * compensationVolatge) * 0.5;
-    Serial.print("TDS Value:");
-    Serial.print(tdsValue, 0);
-    Serial.println("ppm");
+    float compensationVoltage = averageVoltage / compensationCoefficient;
+    tdsValue = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage 
+                - 255.86 * compensationVoltage * compensationVoltage 
+                + 857.39 * compensationVoltage) * 0.5;
+
+    char response[50];
+    char repp[50];
+    dtostrf(tdsValue, 4, 2, repp);
+    sprintf(response, "{\"tds_value\": \"%s\"}", repp);
+
+    Serial.println(response);
+  	client.publish(topic, response);
   }
-  return tdsValue;
 }
 
-void loop() {
-  if (!mqtt_client.connected()) connectToMQTTBroker();
-  mqtt_client.loop();
-
-  char response[50];
-
-  snprintf(response, sizeof(response), "{\"tds_value\": \"%.2f\"}", calc_tds());
-
-  mqtt_client.publish(mqtt_topic, response, true);
-}
