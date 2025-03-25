@@ -1,0 +1,171 @@
+\documentclass[12pt]{article}
+
+\usepackage{sbc-template}
+\usepackage{graphicx,url}
+\usepackage{pgfplots}
+
+\usepackage[brazil]{babel}   
+\usepackage[utf8]{inputenc}  
+
+     
+\sloppy
+
+\title{Monitoramento e coleta de dados do fator do total de sólidos dissolvidos em fontes de água potável com a finalidade de alertar e impedir contaminações}
+
+\author{João Lucas Abbude de Santana}
+
+\address{Centro Universitário Jorge Amado}
+
+\begin{document} 
+
+\maketitle
+
+\begin{resumo}
+O monitoramento contínuo da qualidade da água potável é um desafio crítico para a saúde pública, especialmente em fontes como poços artesianos. Este artigo propõe um sistema embarcado para análise em tempo real do Total de Sólidos Dissolvidos (TDS), utilizando componentes de baixo custo e tecnologias de comunicação sem fio. O dispositivo desenvolvido integra um sensor TDS Meter V1.0, um microcontrolador Arduino Uno e um módulo ESP-01 para captura, processamento e transmissão de dados. A solução implementa um \textit{broker} MQTT para comunicação e uma interface web para visualização e alertas, permitindo monitoramento preciso e imediato dos níveis de contaminação. Os resultados experimentais demonstram a viabilidade técnica do sistema, com capacidade de detectar variações nos níveis de sólidos dissolvidos e prover uma ferramenta acessível para prevenção de riscos à saúde relacionados à qualidade da água.
+\end{resumo}
+
+\begin{abstract}
+Continuous monitoring of potable water quality represents a critical challenge for public health, especially in sources such as artesian wells. This paper proposes an embedded system for real-time Total Dissolved Solids (TDS) analysis, utilizing low-cost components and wireless communication technology. The developed device integrates a TDS Meter V1.0 sensor, an Arduino Uno microcontroller, and an ESP-01 module for data capture, processing, and transmission. The solution implements a MQTT broker for communication and a web interface for visualization and alerts, enabling precise and immediate monitoring of contamination levels. Experimental results demonstrate the technical feasibility of the system, with the capability to detect dissolved solids variations and provide an accessible tool for preventing health risks related to water quality.
+\end{abstract}
+
+\section{Introdução}
+
+Poços artesianos, caracterizados pela capacidade da pressão subterrânea de elevar naturalmente a água à superfície, sem o uso de bombas, têm se mostrado uma solução importante para abastecimento em situações de escassez hídrica e uma alternativa econômica para o consumo doméstico e agrícola \cite{fagundes2015poccos}. Essa fonte de água subterrânea é frequentemente utilizada em regiões onde a disponibilidade de água potável é limitada, ou onde há altos custos associados ao uso de fontes superficiais de água.
+
+Entretanto, a natureza dos poços artesianos os torna particularmente suscetíveis à contaminação, especialmente em áreas onde atividades agrícolas, industriais ou resíduos urbanos se encontram próximos das zonas de captação. Essas fontes de poluição podem introduzir contaminantes químicos e biológicos na água, elevando riscos à saúde pública, uma vez que a ingestão de água contaminada está associada a uma variedade de doenças e condições de saúde adversas \cite{pushpalatha2022total}. Diante disso, estratégias de monitoramento e controle de qualidade tornam-se essenciais para garantir a segurança no consumo de água dessas fontes.
+
+Entre as métricas empregadas na avaliação da qualidade da água, uma das mais amplamente aceitas e de fácil mensuração é o índice de sólidos totais dissolvidos (TDS, do inglês \textit{Total Dissolved Solids}), que quantifica a concentração de substâncias dissolvidas na água, indicando a presença de minerais, sais, metais e outras partículas que podem representar potenciais riscos à saúde \cite{sherrard1987total}. Altos níveis de TDS não apenas afetam o paladar e a aceitação da água pelos consumidores, mas também podem contribuir para problemas de saúde, como distúrbios gastrointestinais e doenças renais, quando há ingestão prolongada de certos contaminantes \cite{edition2011guidelines}.
+
+Dada a relevância desse parâmetro, o monitoramento contínuo e preciso do TDS é necessário, pois ele permite identificar variações que podem sinalizar precocemente o aumento da contaminação da água. Assim, é imperativo o desenvolvimento de sistemas de alerta e controle que garantam que os níveis de TDS permaneçam dentro dos limites seguros estabelecidos para o consumo humano. O presente estudo aborda métodos e tecnologias de monitoramento de TDS para otimizar a segurança e a eficiência no uso de poços artesianos.
+
+%\section{Objetivo Geral} \label{sec:firstpage}
+
+Com isso, o objetivo desse projeto será a criação de um dispositivo embarcado com a capacidade de medir níveis de TDS de fontes de água propensas à contaminação, além de uma aplicação gráfica com a finalidade de monitorar e coletar esses mesmos dados fornecidos pelo dispositivo, afim de manter a qualidade da água própria para consumo, portanto evitando riscos à saúde humana.
+
+%\section{Objetivo Específico}
+\iffalse
+    \begin{itemize}
+        \item Desenvolver um dispositivo com a capacidade de coletar o nível de TDS de uma fonte de água, tal como um poço artesiano;
+        \item Coletar e tratar os dados recebidos por esse dispositivo;
+        \item Usar esses dados tratados em uma interface gráfica;
+    \end{itemize}
+\fi
+
+\section{Fundamentação Teórica}
+
+Garantir a segurança na qualidade da água com a finalidade de consumo é algo de extrema importância para a manutenção da saúde pública, portanto, o monitoramento de parâmetros relacionados a essa qualidade se faz essencial. Dentre esses parâmetros, o índice de sólidos totais dissolvidos (TDS) tem se destacado como uma medida eficaz na detecção de contaminação por substâncias dissolvidas, sendo amplamente utilizado em sistemas de monitoramento de qualidade da água. 
+
+O TDS é uma métrica amplamente aceita para avaliar a concentração de partículas dissolvidas em água, que inclui sais, minerais, metais e outros compostos orgânicos e inorgânicos. Esta medida é crítica em sistemas de monitoramento de qualidade da água, pois concentrações elevadas de TDS podem indicar contaminação por fontes externas e são associadas a uma série de problemas de saúde. No presente sistema, o sensor TDS Meter V1.0 é utilizado para aferir a concentração de sólidos dissolvidos na água e fornecer leituras precisas, conforme a faixa recomendada para monitoramento em aplicações de abastecimento doméstico. Medições feitas em ppm, ou \textit{partículas por milhão} podem ser divididas em categorias onde "Excelente" é menos de 300 ppm; "Bom", entre 300 e 600 ppm; "Aceitável", entre 600 e 900 ppm; "Ruim", entre 900 e 1200 ppm; e "Inaceitável", maior que 1200 ppm \cite{islam2017assessment}. 
+
+%A Organização Mundial da Saúde (OMS) recomenda que o nível de TDS na água potável seja mantido abaixo de 600 mg/L (ou ppm), sendo que concentrações superiores a esse valor podem comprometer a aceitabilidade e a segurança da água para consumo humano \cite{cotruvo20172017}.
+
+O Arduíno Uno é uma placa com um microcontrolador de código aberto amplamente utilizada em diversos sistemas embarcados devido à sua simplicidade e robustez. Ele fornece pinos de entrada e saída digitais e analógicos, que permitem a integração com sensores, atuadores e módulos de comunicação \cite{banzi2022getting}.
+
+O TDS Meter V1.0 é um sensor de detecção de sólidos dissolvidos que converte a condutividade elétrica da água em uma medida de concentração de TDS em partículas por milhão. Este sensor é capaz de fornecer leituras precisas em condições controladas e é compatível com a plataforma Arduino,  facilitando sua integração em sistemas de monitoramento da qualidade da água \cite{TDS2020datasheet}.% A medição de TDS é feita de acordo com a condutividade da água, considerando que o aumento na concentração de íons presentes resulta em um aumento na condutividade elétrica. O sensor converte essa condutividade em uma leitura de TDS, facilitando o monitoramento em tempo real e a análise histórica dos dados de qualidade da água.
+
+ESP8266 é um microcontrolador que é usado como módulo na forma de um ESP-01, com a finalidade de habilitar conectividade Wi-Fi, que permite a aparelhos embarcados a capacidade de enviar dados para uma rede local ou um servidor remoto a partir desse protocolo sem fio. Esse módulo tem sido amplamente adotado em aplicações de Internet das Coisas (IoT) devido ao seu baixo consumo de energia, pequeno tamanho e compatibilidade com diversas plataformas \cite{8502562}. 
+
+MQTT (\textit{Message Queuing Telemetry Transport}) é um paradigma que permite a transmissão de mensagens para agrupamentos específicos de clientes de forma intermitente. Esse paradigma, conhecido como (\textit{Publish-Subscriber}) Publicador-Assinante, permite que clientes interessados passem a assinar tópicos de seu interesse em um servidor centralizado chamado Broker MQTT. Portanto, este mesmo é um protocolo leve e ideal para a troca de informações de forma imediata e segura entre aparelhos de baixa energia como neste trabalho, e um servidor o qual processará as informações fornecidas pelo mesmo. \cite{quincozes2019mqtt}
+
+
+\section{Metodologia}
+
+O sistema é projetado para enviar leituras de TDS a um servidor interno, onde os dados são armazenados e processados para disponibilização ao usuário final. A arquitetura do sistema é composta por três principais módulos: (1) módulo de aquisição de dados de TDS, (2) módulo de comunicação sem fio, e (3) módulo de processamento e visualização de dados. 
+
+\begin{figure}[htbp!]
+    \centering
+    \includegraphics[width=1\textwidth]{circuit.png}
+    \caption{Diagrama de cabeamento do Arduino com os periféricos.}
+    \label{fig:dispositivo}
+\end{figure}
+
+Para a obtenção das leituras de TDS, o sensor TDS Meter V1.0 é conectado ao microcontrolador Arduíno Uno, o qual entrega energia elétrica suficiente para alimentar esse periférico, tão como o pino de acesso periférico, para fazer a interface digital necessária para a leitura desses dados, (Figura \ref{fig:dispositivo}). Este sensor mede a condutividade elétrica da água e converte o sinal analógico em uma leitura proporcional ao nível de TDS, que é captada pela entrada analógica do Arduíno Uno. A conversão do valor de condutividade para o índice de TDS é feita pelo Arduíno, que realiza o cálculo conforme a especificação técnica do sensor.
+
+\begin{figure}[htbp!]
+    \centering
+    \includegraphics[width=0.4\textwidth, angle=90]{circuittrue.jpg}
+    \caption{Construção e cabeamento interno do aparelho com o chassi aberto.}
+    \label{fig:chassi}
+\end{figure}
+
+Além disso, com o objetivo de proteger o circuito, foi utilizado um chassi de plástico de tamanho adequado (Figura \ref{fig:chassi}), com um prensa-cabo habilitando o leitor do TDS Meter V1.0 de escapar desse chassi para realizar as leituras, sem colocar o resto do circuito em perigo de curto-circuito por conta da água. Além disso, é usada uma bateria de 9 volts, na tomada de alimentação CC do Arduíno, com a finalidade de alimentar o circuito inteiro.
+
+O Arduíno é programado para coletar leituras do sensor em um intervalo determinado, visando equilibrar sobrecarga no consumo da bateria no dispositivo, e uma leitura precisa e contínua da qualidade da água. As leituras de TDS são então convertidas de milivolts para ppm (partes por milhão), utilizando uma fórmula calibrada previamente com base na resposta do sensor.
+
+A transmissão das leituras de TDS ao servidor interno é realizada pelo módulo ESP-01, que está conectado ao Arduíno Uno via interface serial, e é usado como interface Wi-Fi do Arduíno. O módulo ESP-01 é programado para se conectar a uma rede Wi-Fi local e transmitir os dados utilizando o protocolo MQTT (\textit{Message Queuing Telemetry Transport}).
+
+No Arduíno Uno, foi implementado um algoritmo responsável por publicar as leituras de TDS como mensagens MQTT no tópico esperado pelo servidor. A cada leitura obtida do sensor, o Arduíno envia o valor de TDS para o ESP-01, que então transmite essa informação para o \textit{broker} MQTT no servidor, onde os dados são armazenados em um banco de dados para posterior análise e visualização.
+
+\begin{figure}[htbp!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{arquitetura_sistema.png}
+    \caption{Arquitetura do sistema de monitoramento de qualidade de água.}
+    \label{fig:arquitetura}
+\end{figure}
+
+O fluxo de operação do sistema (Figura \ref{fig:arquitetura}) se inicia na coleta de dados efetuada pelo Arduíno Uno, o qual lê o valor de TDS a partir do sensor TDS Meter V1.0 em intervalos definidos. Após isso, o valor de TDS lido é enviado pelo módulo ESP-01, por Wi-Fi, para o \textit{broker} MQTT, o também qual reside no servidor designado. Logo então, esses dados são armazenados nesse mesmo servidor, dentro de um banco de dados de escolha, o qual permite análise desses dados, além da visualização desses mesmos, em forma gráfica, o qual ocorre durante a fase final, em que, a interface gráfica desenvolvida permite ao usuário visualizar o histórico de TDS e receber alertas em caso de detecção de níveis acima do limite seguro configurado.
+
+Esse fluxo garante a operação contínua e precisa do sistema, possibilitando ao usuário monitorar a qualidade da água em tempo real e ser notificado imediatamente em caso de contaminação potencial.
+
+O servidor interno atua como um \textit{broker} MQTT, recebendo leituras de TDS enviadas pelo módulo ESP-01, um banco de dados, o qual armazena essas mesmas leituras, um serviço de back-end, responsável por gerenciar essa relação do MQTT com o banco de dados, bem como servir as informações necessárias para a visualização do usuário, e o serviço responsável por essa mesma interface, permitindo a organização estruturada das informações coletadas pelo dispositivo, para fins de análise e visualização histórica.
+
+\begin{figure}[htbp!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{dashboard.png}
+    \caption{Interface web de monitoramento.}
+    \label{fig:dashboard}
+\end{figure}
+
+Para a visualização dos dados, foi desenvolvida uma interface gráfica (Figura \ref{fig:dashboard}), na forma de uma página web com acesso local, que exibe um histórico limitado das últimas leituras de TDS, em função do tempo em um gráfico, tão como a leitura atual e a sua avaliação de acordo com o nível de \textit{partículas por milhão}, ou, ppm. Possibilitando ao usuário acompanhar as variações e tendências. A interface foi projetada para ser acessível através da rede local, facilitando o acesso aos dados do sistema de monitoramento. Além disso, a interface inclui uma funcionalidade de alarme, a qual é ativada quando o estado de leitura do TDS atinge o nível "Inaceitável", que notifica o usuário da ultrapassagem do nível de TDS do limite de segurança para o consumo humano. A notificação é configurada para ser enviada através de e-mail, além de um alerta visual na interface.
+
+% Para garantir a precisão das leituras de TDS, o sensor TDS Meter V1.0 foi calibrado em laboratório com amostras de água de concentração conhecida. Esse procedimento de calibração é necessário para garantir que as leituras de TDS estejam dentro da faixa de precisão esperada. Após a calibração, foi configurado um valor-limite de TDS para o consumo humano, seguindo as diretrizes da Organização Mundial da Saúde (OMS), que recomenda um valor máximo de 600 ppm para água potável \cite{cotruvo20172017}.
+
+\section{Resultados e Conclusão}
+
+O dispositivo de monitoramento de Sólidos Totais Dissolvidos foi testado em uma caixa de água residencial para avaliar sua eficácia e precisão na detecção de variações na qualidade da água. Os resultados obtidos demonstraram a viabilidade técnica do sistema proposto e sua potencial contribuição para o monitoramento preventivo da qualidade da água.
+
+A Figura \ref{fig:resultados} apresenta os dados coletados durante o período experimental, ilustrando as variações do índice de TDS ao longo do de 192 horas contínuas (25 de novembro até 2 de dezembro), onde foram coletadas 32889 leituras de TDS.
+
+\usepgfplotslibrary{fillbetween}
+\pgfplotsset{compat=1.18}
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+width=0.8\textwidth,
+height=6cm,
+xlabel={Tempo (horas)},
+ylabel={TDS (ppm)},
+xmin=0, xmax=192,
+ymin=0, ymax=250,
+grid=major,
+legend pos=north west
+]
+\addplot[
+color=blue,
+mark=o,
+smooth
+] coordinates {
+(0,141.34) (12,155.42) (24,148.4) (36,158.91)
+(48,162.4) (60,165.88) (72,165.88) (84,167.61)
+(96,196.86) (108,196.86) (120,196.86) (132,191.73) (154,141.34)
+(168,137.8) (180,183.15) (192,183.2)
+};
+\legend{Leituras de TDS}
+\end{axis}
+\end{tikzpicture}
+\caption{Variação do índice de TDS em função do tempo}
+\label{fig:resultados}
+\end{figure}
+
+Foi demonstrado que o dispositivo conseguiu captar variações de TDS dentro da faixa esperada, validando sua capacidade de medir com precisão a concentração de sólidos dissolvidos em água. Além disso, o sistema de comunicação sem fio e a interface gráfica mostraram-se funcionais, permitindo o monitoramento em tempo real e o registro histórico das leituras para análise posterior.
+
+O sistema também demonstrou eficiência na transmissão de dados e na visualização das informações por meio de uma interface gráfica intuitiva. A integração de componentes de baixo custo, como o sensor TDS Meter V1.0, o Arduino Uno e o módulo ESP-01, assegurou uma solução acessível e viável para aplicações em monitoramento de qualidade da água em tempo real.
+
+Como trabalhos futuros, propõe-se a implementação de um dispositivo com medidores de pH e temperatura, para maior eficácia e precisão na avaliação da qualidade da água e da capacidade de consumo da mesma, além da implementação de um protocolo de comunicação a longa distância mais robusto e que consome menos bateria, como LoRa (do inglês \textit{Long Range}), com o propósito de ampliar a capacidade e extensibilidade desse sistema.
+
+
+\bibliographystyle{sbc}
+\bibliography{sbc-template}
+
+\end{document}
